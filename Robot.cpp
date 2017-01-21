@@ -8,60 +8,61 @@
 #include "Encoder.h"
 #include "Talon.h"
 #include "ADXRS450_Gyro.h"
-#include "USBCamera.h"
+//#include "USBCamera.h"
 #include "CameraServer.h"
 #include "DigitalOutput.h"
 #include "Timer.h"
 #include "DriverStation.h"
 
 class Robot: public IterativeRobot {
-    Joystick xboxDrive; //joystick
-    Joystick Logitech;
-    RobotDrive myDrive; // robot drive
-    Talon LowArm;
-    Victor FishTape;
-    Talon Wench;
-    Talon BallRotate;
-    Talon BallRoller;
-    LiveWindow *lw;
-    DigitalInput BlSw;
-    DigitalInput Sw1, Sw2, Sw3, Sw4;
-    DigitalOutput Light1;
-    DigitalOutput Light2;
-    Encoder ballarm;
-    ADXRS450_Gyro gyroOne;
+    Joystick V_XboxDrive; //joystick
+    Joystick V_Logitech;
+    RobotDrive V_MyDrive; // robot drive
+    Talon V_LowArm;
+    Victor V_FishTape;
+    Talon V_Winch;
+    Talon V_BallRotate;
+    Talon V_BallRoller;
+    LiveWindow *V_LW;
+    DigitalInput V_BlSw;
+    DigitalInput V_Sw1, V_Sw2, V_Sw3, V_Sw4;
+    DigitalOutput V_Light1;
+    DigitalOutput V_Light2;
+    Encoder V_Ballarm;
+    ADXRS450_Gyro V_GyroOne;
 
-    const double kUpdatePeriod = 0.005;
-    double AutonTime;
-    int AutonState;
-    bool AutonDisabled;
+    const double C_UpdatePeriod = 0.005;
+    int V_AutonState;
+    int V_USB_Cam = 0;
 
     /* Controller button s */
-    const int A_btn = 1;
-    const int B_btn = 2;
-    const int X_btn = 3;
-    const int Y_btn = 4;
-    const int LB_btn = 5;
-    const int RB_btn = 6;
-    const int Back_btn = 7;
-    const int Start_btn = 8;
-    const int LStick_push = 9;
-    const int RStick_push = 10;
+    const int C_XB_A_Btn = 1;
+    const int C_XB_B_Btn = 2;
+    const int C_XB_X_Btn = 3;
+    const int C_XB_Y_Btn = 4;
+    const int C_XB_L_Bumper = 5;
+    const int C_XB_R_Bumper = 6;
+    const int C_XB_BackBtn = 7;
+    const int C_XB_StartBtn = 8;
+    const int C_XB_L_StickPush = 9;
+    const int C_XB_R_StickPush = 10;
 
     /* Motor gains */
-    const float BallRollerFwd = 0.90;
-    const float BallRollerRvrs = -0.9;
-    const float WenchFwd = 0.4;
-    const float WenchRvrs = -0.4;
-    const float BallArmUp = 0.4;
-    const float BallArmDwn = -0.4;
-    const float FishTapeUp = 0.5;
-    const float FishTapeDwn = -0.3;
-    const float WenchSpd = 0.4;
-    const float LowArmGx = 0.6;
-    const float RotationGx = 0.6;
-    const float RotationMin = 0.5;
-    const float RotationMax = 0.8;
+    const float K_WenchFwd = 0.4;
+    const float K_WenchRvrs = -0.4;
+    const float K_BallArmUp = 0.4;
+    const float K_BallArmDwn = -0.4;
+    const float K_WinchSpd = 0.4;
+    const float K_LowArmGx = 0.6;
+    const float K_RotationGx = 0.6;
+    const float K_RotationMin = 0.5;
+    const float K_RotationMax = 0.8;
+    const float K_FishTapeDown = 1.0;
+    const float K_FishTapeUp = -1.0;
+    const float K_FishTapeStop = 0;
+    const float K_BallRollerIn = 1.0;
+    const float K_BallRollerOut = -1.0;
+    const float K_BallRollerStop = 0;
 
 
 
@@ -69,30 +70,30 @@ class Robot: public IterativeRobot {
 
 public:
     Robot() :
-      xboxDrive(0),// Initialize Joystick on port 0.
-      Logitech(1),
-      LowArm(4),
-      FishTape(7),
-      BallRotate(6), // Port 2 is dead
-      BallRoller(3),
-      Wench(5),
-      myDrive(0, 1), // Initialize the Victor on channel 2.
-      lw(NULL),
-      BlSw(9), // get DI value from input pos 1
-      ballarm(0,1,true,Encoder::EncodingType::k4X),
-      Sw1(5),
-      Sw2(6),
-      Sw3(7),
-      gyroOne(SPI::Port::kOnboardCS0),
-      Sw4(8),
-	  Light1(4),
-	  Light2(3)
+      V_XboxDrive(0),// Initialize Joystick on port 0.
+      V_Logitech(1),
+      V_LowArm(4),
+      V_FishTape(7),
+      V_BallRotate(6), // Port 2 is dead
+      V_BallRoller(3),
+      V_Winch(5),
+      V_MyDrive(0, 1), // Initialize the Victor on channel 2.
+      V_LW(NULL),
+      V_BlSw(9), // get DI value from input pos 1
+      V_Ballarm(0,1,true,Encoder::EncodingType::k4X),
+      V_Sw1(5),
+      V_Sw2(6),
+      V_Sw3(7),
+      V_GyroOne(SPI::Port::kOnboardCS0),
+      V_Sw4(8),
+	  V_Light1(4),
+	  V_Light2(3)
     {
-    myDrive.SetExpiration(0.1);
+    V_MyDrive.SetExpiration(0.1);
     }
 
 private:
-      BuiltInAccelerometer accel;
+      BuiltInAccelerometer V_Accel;
 
  /******************************************************************************
   * Function:     RobotInit
@@ -102,16 +103,18 @@ private:
 
   void RobotInit ()
   {
-  lw = LiveWindow::GetInstance();
-  CameraServer::GetInstance()->SetQuality(50);
+  V_LW = LiveWindow::GetInstance();
+
+ // CameraServer::GetInstance()->SetQuality(50);
    //the camera name (ex "cam0") can be found through the roborio web interface
-  CameraServer::GetInstance()->StartAutomaticCapture("cam1");
-  AutonState = 0;
-  ballarm.Reset();
-  ballarm.SetMaxPeriod(.01);
-  ballarm.SetMinRate(.02);
-  ballarm.SetDistancePerPulse(.9);
-  gyroOne.Calibrate();
+  //CameraServer::GetInstance()->StartAutomaticCapture(V_USB_Cam);
+
+  V_AutonState = 0;
+  V_Ballarm.Reset();
+  V_Ballarm.SetMaxPeriod(.01);
+  V_Ballarm.SetMinRate(.02);
+  V_Ballarm.SetDistancePerPulse(.9);
+  V_GyroOne.Calibrate();
   UpdateActuatorCmnds(0,0,false,false,false,false,false,false,false,0,0,0,0,0);
 
   UpdateSmartDashboad(false,
@@ -141,8 +144,8 @@ void DisabledPeriodic()
 {
   Scheduler::GetInstance()->Run();
 
-  Light1.Set(1);
-  Light2.Set(1);
+  V_Light1.Set(1);
+  V_Light2.Set(1);
 
 
   while(IsDisabled())
@@ -151,21 +154,21 @@ void DisabledPeriodic()
 
     ReadAutonSwitch();
 
-    UpdateSmartDashboad(Sw1.Get(),
-                        Sw2.Get(),
-                        Sw3.Get(),
-                        Sw4.Get(),
-                        BlSw.Get(),
-                        (double)AutonState,
+    UpdateSmartDashboad(V_Sw1.Get(),
+                        V_Sw2.Get(),
+                        V_Sw3.Get(),
+                        V_Sw4.Get(),
+                        V_BlSw.Get(),
+                        (double)V_AutonState,
                         (double)0,
-                        ballarm.GetDistance(),
-                        gyroOne.GetAngle(),
-                        accel.GetX(),
-                        accel.GetY(),
-                        accel.GetZ(),
+                        V_Ballarm.GetDistance(),
+                        V_GyroOne.GetAngle(),
+                        V_Accel.GetX(),
+                        V_Accel.GetY(),
+                        V_Accel.GetZ(),
                         (double)0,
                         (double)0);
-  wait(kUpdatePeriod);
+  wait(C_UpdatePeriod);
   }
 }
 
@@ -182,53 +185,53 @@ void ReadAutonSwitch()
      * with the auton state. */
 
     /* Read the 4 switches here: */
-    if ((Sw1.Get() == false) && (Sw2.Get() == true) && (Sw3.Get() == true) && (Sw4.Get() == true))
+    if ((V_Sw1.Get() == false) && (V_Sw2.Get() == true) && (V_Sw3.Get() == true) && (V_Sw4.Get() == true))
       {
       /* Moat and rock wall */
-      AutonState = 1;
+      V_AutonState = 1;
       }
-    else if ((Sw1.Get() == true) && (Sw2.Get() == false) && (Sw3.Get() == true) && (Sw4.Get() == true))
+    else if ((V_Sw1.Get() == true) && (V_Sw2.Get() == false) && (V_Sw3.Get() == true) && (V_Sw4.Get() == true))
       {
       /* Uneven ramps */
-      AutonState = 2;
+      V_AutonState = 2;
       }
-    else if ((Sw1.Get() == false) && (Sw2.Get() == false) && (Sw3.Get() == true) && (Sw4.Get() == true))
+    else if ((V_Sw1.Get() == false) && (V_Sw2.Get() == false) && (V_Sw3.Get() == true) && (V_Sw4.Get() == true))
       {
       /* Low bar and rough terrain */
-      AutonState = 3;
+      V_AutonState = 3;
       }
-    else if ((Sw1.Get() == true) && (Sw2.Get() == true) && (Sw3.Get() == false) && (Sw4.Get() == true))
+    else if ((V_Sw1.Get() == true) && (V_Sw2.Get() == true) && (V_Sw3.Get() == false) && (V_Sw4.Get() == true))
       {
       /* Low power */
-      AutonState = 4;
+      V_AutonState = 4;
       }
-    /*else if ((Sw1.Get() == false) && (Sw2.Get() == true) && (Sw3.Get() == false) && (Sw4.Get() == true))
+    /*else if ((V_Sw1.Get() == false) && (V_Sw2.Get() == true) && (V_Sw3.Get() == false) && (V_Sw4.Get() == true))
       {
       /* Low bar, forward and then reverse
-      AutonState = 5;
+      V_AutonState = 5;
       }*/
-    else if ((Sw1.Get() == true) && (Sw2.Get() == false) && (Sw3.Get() == false) && (Sw4.Get() == true))
+    else if ((V_Sw1.Get() == true) && (V_Sw2.Get() == false) && (V_Sw3.Get() == false) && (V_Sw4.Get() == true))
       {
       /* Low bar, forward and then turn */
-      AutonState = 6;
+      V_AutonState = 6;
       }
-    else if ((Sw1.Get() == false) && (Sw2.Get() == false) && (Sw3.Get() == false) && (Sw4.Get() == true))
+    else if ((V_Sw1.Get() == false) && (V_Sw2.Get() == false) && (V_Sw3.Get() == false) && (V_Sw4.Get() == true))
       {
       /* Low bar, forward and then turn */
-      AutonState = 7;
+      V_AutonState = 7;
       }
-    else if ((Sw1.Get() == true) && (Sw2.Get() == true) && (Sw3.Get() == true) && (Sw4.Get() == false))
+    else if ((V_Sw1.Get() == true) && (V_Sw2.Get() == true) && (V_Sw3.Get() == true) && (V_Sw4.Get() == false))
     {
-    	AutonState = 8;
+    	V_AutonState = 8;
     }
-    else if ((Sw1.Get() == false) && (Sw2.Get() == true) && (Sw3.Get() == true) && (Sw4.Get() == false))
+    else if ((V_Sw1.Get() == false) && (V_Sw2.Get() == true) && (V_Sw3.Get() == true) && (V_Sw4.Get() == false))
     {
-    	AutonState = 9;
+    	V_AutonState = 9;
     }
     else
       {
       /* Default, no auton */
-      AutonState = 0;
+      V_AutonState = 0;
       }
   }
 
@@ -237,79 +240,79 @@ void ReadAutonSwitch()
  *
  * Description:  Update the commands sent out to the RoboRIO.
  ******************************************************************************/
-void UpdateActuatorCmnds(float ballRoller,
-                         float desiredPos,
-                         bool LgtB3,
-                         bool LgtB5,
-                         bool LgtB6,
-                         bool LgtB7,
-                         bool LgtB8,
-                         bool LgtB9,
-                         bool LgtB11,
-                         float DrvLeft,
-                         float DrvRight,
-                         float fishTape,
-                         float lowArm,
-                         float wench)
+void UpdateActuatorCmnds(float L_BallRoller,
+                         float L_DesiredPos,
+                         bool L_LgtB3,
+                         bool L_LgtB5,
+                         bool L_LgtB6,
+                         bool L_LgtB7,
+                         bool L_LgtB8,
+                         bool L_LgtB9,
+                         bool L_LgtB11,
+                         float L_DrvLeft,
+                         float L_DrvRight,
+                         float L_FishTape,
+                         float L_LowArm,
+                         float L_Winch)
   {
-  float ArmError;
-  float ballRotate;
-  float ArmP = ballarm.GetDistance();
+  float L_ArmError;
+  float L_BallRotate;
+  float L_ArmP = V_Ballarm.GetDistance();
 
   /* Set the output for the angle of the ball arm: */
-  if (desiredPos > 0)
+  if (L_DesiredPos > 0)
     {
     /* If the desired position is above zero, the operator is commanding
      * the arm to a given position */
-      ArmError = (desiredPos - ArmP) * (-0.01);
-      ballRotate = ArmError;
+      L_ArmError = (L_DesiredPos - L_ArmP) * (-0.01);
+      L_BallRotate = L_ArmError;
     }
-  else if ((LgtB11 == true) && (ArmP < 211))
+  else if ((L_LgtB11 == true) && (L_ArmP < 211))
     {
-    ballRotate = -1;
+    L_BallRotate = -1;
     }
-  else if (LgtB5 && ArmP < 211)
+  else if (L_LgtB5 && L_ArmP < 211)
     {
-    ballRotate = -0.4;
+    L_BallRotate = -0.4;
     }
-  else if (LgtB3 && ArmP > -10)
+  else if (L_LgtB3 && L_ArmP > -10)
     {
-    ballRotate = 0.4;
+    L_BallRotate = 0.4;
     }
-  else if (LgtB6 && ArmP > 20)
+  else if (L_LgtB6 && L_ArmP > 20)
     {
-    ballRotate = 0.8;
+    L_BallRotate = 0.8;
     }
   else
     {
     /* If the desired position is zero, the operator is not wanting the arm
      * to be controlled.  Set the output to the motor to zero which will
      * disable the motor and allow the arm to naturally fall. */
-      ArmError = 0;
-      ballRotate = ArmError;
+      L_ArmError = 0;
+      L_BallRotate = L_ArmError;
     }
 
 
 
   /* Limit the allowed arm command if it could go past the allowed vertical position: */
-  if ((ArmP > 230 && LgtB5 == true) ||
-      (ArmP < -10 && LgtB3 == true))
+  if ((L_ArmP > 230 && L_LgtB5 == true) ||
+      (L_ArmP < -10 && L_LgtB3 == true))
     {
-    ballRotate = 0;
+    L_BallRotate = 0;
     }
 
   /* This is limiting for when the arm goes past the vertical position: */
-  if (ArmP > 211)
+  if (L_ArmP > 211)
     {
-    ballRotate = 0.5;
+    L_BallRotate = 0.5;
     }
 
-  BallRoller.Set(ballRoller);
-  BallRotate.Set(ballRotate);
-  myDrive.TankDrive(DrvLeft, DrvRight);
-  FishTape.Set(fishTape);
-  LowArm.Set(lowArm);
-  Wench.Set(wench);
+  V_BallRoller.Set(L_BallRoller);
+  V_BallRotate.Set(L_BallRotate);
+  V_MyDrive.TankDrive(L_DrvLeft, L_DrvRight);
+  V_FishTape.Set(L_FishTape);
+  V_LowArm.Set(L_LowArm);
+  V_Winch.Set(L_Winch);
   }
 
 
@@ -318,52 +321,53 @@ void UpdateActuatorCmnds(float ballRoller,
  *
  * Description:  Report data back to the smart dashboard.
  ******************************************************************************/
-void UpdateSmartDashboad(bool   Switch1,
-                         bool   Switch2,
-                         bool   Switch3,
-                         bool   Switch4,
-                         bool   BallSwitch,
-                         double AutoState,
-                         double ArmAngleCmnd,
-                         double ArmAngleAct,
-                         double GyroAngle,
-                         double AccelX,
-                         double AccelY,
-                         double AccelZ,
-                         double LError,
-                         double RError)
+void UpdateSmartDashboad(bool   L_Switch1,
+                         bool   L_Switch2,
+                         bool   L_Switch3,
+                         bool   L_Switch4,
+                         bool   L_BallSwitch,
+                         double L_AutoState,
+                         double L_ArmAngleCmnd,
+                         double L_ArmAngleAct,
+                         double L_GyroAngle,
+                         double L_AccelX,
+                         double L_AccelY,
+                         double L_AccelZ,
+                         double L_LError,
+                         double L_RError)
   {
-    bool ArmUp;
+    bool L_ArmUp;
 
     /* Check to see if it is ok to jump rough terrain: */
-    if (ArmAngleAct > 200)
+    if (L_ArmAngleAct > 200)
       {
-      ArmUp = true;
+      L_ArmUp = true;
       }
 
 
-    double DisplayGyro = 0;
+    double L_DisplayGyro = 0;
 
     /* Update the switch states on the robot: */
-    SmartDashboard::PutBoolean("Sw1",Switch1);
-    SmartDashboard::PutBoolean("Sw2",Switch2);
-    SmartDashboard::PutBoolean("Sw3",Switch3);
-    SmartDashboard::PutBoolean("Sw4",Switch4);
+    SmartDashboard::PutBoolean("V_Sw1",L_Switch1);
+    SmartDashboard::PutBoolean("V_Sw2",L_Switch2);
+    SmartDashboard::PutBoolean("V_Sw3",L_Switch3);
+    SmartDashboard::PutBoolean("V_Sw4",L_Switch4);
 
     /* Update the sensors on the robot: */
-    SmartDashboard::PutNumber("XValue", AccelX);
-    SmartDashboard::PutNumber("YValue", AccelY);
-    SmartDashboard::PutNumber("ZValue", AccelZ);
-    SmartDashboard::PutNumber("BallArmAngle",ArmAngleAct);
-    SmartDashboard::PutNumber("GyroAngle",DisplayGyro);
-    SmartDashboard::PutNumber("Drive Left Command",LError);
-    SmartDashboard::PutNumber("Drive Right Command",RError);
-    SmartDashboard::PutBoolean("Ball in the robot?", BallSwitch);
+    SmartDashboard::PutNumber("XValue", L_AccelX);
+    SmartDashboard::PutNumber("YValue", L_AccelY);
+    SmartDashboard::PutNumber("ZValue", L_AccelZ);
+    SmartDashboard::PutNumber("BallArmAngle",L_ArmAngleAct);
+    SmartDashboard::PutNumber("GyroAngle",L_DisplayGyro);
+    SmartDashboard::PutNumber("Drive Left Command",L_LError);
+    SmartDashboard::PutNumber("Drive Right Command",L_RError);
+    SmartDashboard::PutBoolean("Ball in the robot?", L_BallSwitch);
 
     /* Update the state variables: */
-    SmartDashboard::PutNumber("Arm Angle Motor Command", ArmAngleCmnd);
-    SmartDashboard::PutNumber("Auton state", AutoState);
-    SmartDashboard::PutBoolean("Is the arm in the up position?", ArmUp);
+    SmartDashboard::PutNumber("Arm Angle Motor Command", L_ArmAngleCmnd);
+    SmartDashboard::PutNumber("Auton state", L_AutoState);
+    SmartDashboard::PutBoolean("Is the arm in the up position?", L_ArmUp);
+    SmartDashboard::PutBoolean("Auton On", IsAutonomous());
 
     SmartDashboard::PutString("TestString", "Hello Team 5561!");
   }
@@ -378,8 +382,6 @@ void UpdateSmartDashboad(bool   Switch1,
    {
 
 
-   AutonDisabled = false;
-   AutonTime = 0;
 
    ReadAutonSwitch();
    UpdateActuatorCmnds(0,0,false,false,false,false,false,false,false,0,0,0,0,0);
@@ -392,72 +394,75 @@ void UpdateSmartDashboad(bool   Switch1,
  ******************************************************************************/
  void AutonomousPeriodic()
  {
- double accelX, desiredPos;
- float DriveL, DriveR;
- int AutonStateLocal;
- double ArmP;
- double ArmError;
+ bool L_AutonDisabled;
+ double L_AutonTime = 0;
+ double L_AccelX, L_DesiredPos;
+ float L_DriveL, L_DriveR;
+ int V_AutonStateLocal;
+ double L_ArmP;
+ double L_ArmError;
 
-// Light1.Set(1);
-// Light2.Set(1);
+// V_Light1.Set(1);
+// V_Light2.Set(1);
 
- AutonStateLocal = 0;
+ V_AutonStateLocal = 0;
 
-
- while (IsAutonomous())
+ L_AutonDisabled = false;
+ L_AutonTime = 0;
+ while (IsAutonomous() && IsEnabled())
    {
    /* Read sensors here */
-   accelX = accel.GetX();
-//   ArmP = ballarm.GetDistance();
+   //L_AccelX = V_Accel.GetX();
+//   L_ArmP = V_Ballarm.GetDistance();
 
 
-   if (AutonDisabled == false)
+   if (L_AutonDisabled == false)
      {
-     switch (AutonState)
+     switch (V_AutonState)
        {
        case 2: /* Low bar and rough terrain */
          {
-        if (AutonStateLocal == 0)
+        if (V_AutonStateLocal == 0)
           {
           /* State 1: Raise arm to desired position */
-          AutonStateLocal = 1;
-          DriveL = 0.6;
-          DriveR = 0.6;
-          desiredPos = 100;
+          V_AutonStateLocal = 1;
+          L_DriveL = 0.6;
+          L_DriveR = 0.6;
+          L_DesiredPos = 100;
           }
-        else if (AutonStateLocal == 1 && AutonTime <  1.8)
+        else if (V_AutonStateLocal == 1 && L_AutonTime <  1.8)
           {
-          DriveL = 0.6;
-          DriveR = 0.6;
-          desiredPos = 100;
+          L_DriveL = 0.6;
+          L_DriveR = 0.6;
+          L_DesiredPos = 100;
           }
-        else if (AutonTime >=  1.8)
+        else if (L_AutonTime >=  1.8)
           {
-          AutonDisabled = true;
-          AutonStateLocal = 3;
+          L_AutonDisabled = true;
+          V_AutonStateLocal = 3;
           }
          break;
          }
        case 4: /* Low bar and rough terrain */
          {
-             if (AutonStateLocal == 0)
+             if (V_AutonStateLocal == 0)
                {
                /* State 1: Raise arm to desired position */
-               AutonStateLocal = 1;
-               DriveL = 0.8;
-               DriveR = 0.8;
-               desiredPos = 180;
+               V_AutonStateLocal = 1;
+               L_DriveL = 0.8;
+               L_DriveR = 0.8;
+               L_DesiredPos = 180;
                }
-             else if (AutonStateLocal == 1 && AutonTime <  1.8)
+             else if (V_AutonStateLocal == 1 && L_AutonTime <  1.8)
                {
-               DriveL = 0.85;
-               DriveR = 0.85;
-               desiredPos = 180;
+               L_DriveL = 0.85;
+               L_DriveR = 0.85;
+               L_DesiredPos = 180;
                }
-             else if (AutonTime >=  1.8)
+             else if (L_AutonTime >=  1.8)
                {
-               AutonDisabled = true;
-               AutonStateLocal = 3;
+               L_AutonDisabled = true;
+               V_AutonStateLocal = 3;
                }
          break;
          }
@@ -465,38 +470,38 @@ void UpdateSmartDashboad(bool   Switch1,
       default:
         {
         /* Default, no auton */
-        desiredPos = 0.0;
-        DriveL = 0.0;
-        DriveR = 0.0;
+        L_DesiredPos = 0.0;
+        L_DriveL = 0.0;
+        L_DriveR = 0.0;
         break;
         }
       }
      }
    else
      {
-     DriveL = 0.0;
-     DriveR = 0.0;
-     desiredPos = 0;
-     AutonStateLocal = 10;
+     L_DriveL = 0.0;
+     L_DriveR = 0.0;
+     L_DesiredPos = 0;
+     V_AutonStateLocal = 10;
      }
 
-   UpdateSmartDashboad(Sw1.Get(),
-                       Sw2.Get(),
-                       Sw3.Get(),
-                       Sw4.Get(),
-                       BlSw.Get(),
-                       AutonState,
+   UpdateSmartDashboad(V_Sw1.Get(),
+                       V_Sw2.Get(),
+                       V_Sw3.Get(),
+                       V_Sw4.Get(),
+                       V_BlSw.Get(),
+                       V_AutonState,
                        0,
-                       ballarm.GetDistance(),
-                       gyroOne.GetAngle(),
-                       accel.GetX(),
-                       accel.GetY(),
-                       accel.GetZ(),
-                       (double)DriveL,
-                       (double)DriveR);
+                       V_Ballarm.GetDistance(),
+                       V_GyroOne.GetAngle(),
+                       V_Accel.GetX(),
+                       V_Accel.GetY(),
+                       V_Accel.GetZ(),
+                       (double)L_DriveL,
+                       (double)L_DriveR);
 
    UpdateActuatorCmnds(0,
-                       desiredPos,
+                       L_DesiredPos,
                        false,
                        false,
                        false,
@@ -504,14 +509,14 @@ void UpdateSmartDashboad(bool   Switch1,
                        false,
                        false,
                        false,
-                       DriveL,
-                       DriveR,
+                       L_DriveL,
+                       L_DriveR,
                        0,
                        0,
                        0);
 
-   Wait(kUpdatePeriod); // Wait 5ms for the next update.
-   AutonTime += kUpdatePeriod;
+   Wait(C_UpdatePeriod); // Wait 5ms for the next update.
+   L_AutonTime += C_UpdatePeriod;
    }
    Scheduler::GetInstance()->Run();
  }
@@ -536,15 +541,15 @@ void UpdateSmartDashboad(bool   Switch1,
 //	  	   if(color == DriverStation::Alliance::kBlue)
 //	  	   {
 //	  		   	  matchColor = true;
-//	  	   		  Light1.Set(1);
-//	  	   		  Light2.Set(0);
+//	  	   		  V_Light1.Set(1);
+//	  	   		  V_Light2.Set(0);
 //	  	   		  SmartDashboard::PutBoolean("alliance",matchColor);
 //	  	   	  }
 //	  	   	  else if(color == DriverStation::Alliance::kRed)
 //	  	   	  {
 //	  	   		  matchColor = false;
-//	  	   		  Light1.Set(0);
-//	  	   		  Light2.Set(1);
+//	  	   		  V_Light1.Set(0);
+//	  	   		  V_Light2.Set(1);
 //	  	   	  }
     UpdateActuatorCmnds(0,0,false,false,false,false,false,false,false,0,0,0,0,0);
   }
@@ -557,182 +562,182 @@ void UpdateSmartDashboad(bool   Switch1,
  ******************************************************************************/
   void TeleopPeriodic()
     {
-      float DrvRY, DrvLY;
-      float BallRollerSpd;
-      float FishTapeSpd;
-      float WenchSpd;
-      float LgtY, LgtZ;
-      double LgtPOV;
-      int LgtP1;
-      bool LgtT0;
-      bool LgtB1,LgtB3,LgtB4,LgtB5,LgtB6,LgtB7,LgtB8,LgtB9,LgtB11,LgtB10,LgtB12;
-      bool XbxB4, XbxB5, XbxB2, XbxB1;
-      bool BallSw;
-      int XbxPOV;
-      double ArmP;
-      double ArmError;
-      double desiredPos;
-      double LoArmCurve;
+      float L_XB_DrvRY, L_XB_DrvLY;
+      float L_BallRollerSpd;
+      float L_FishTapeSpd;
+      float K_WinchSpd;
+      float L_LgtY, L_LgtZ;
+      double L_LgtPOV;
+      int L_LgtP1;
+      bool L_LgtT0;
+      bool L_LgtB1,L_LgtB3,L_LgtB4,L_LgtB5,L_LgtB6,L_LgtB7,L_LgtB8,L_LgtB9,L_LgtB11,L_LgtB10,L_LgtB12;
+      bool L_XbxB4, L_XbxB5, L_XbxB2, L_XbxB1;
+      bool L_BallSw;
+      int L_XbxPOV;
+      double L_ArmP;
+      double L_ArmError;
+      double L_DesiredPos;
+      double L_LoArmCurve;
 
 
     while (IsOperatorControl() && IsEnabled())
       {
 
       /* Read sensor values here: */
-      ArmP = ballarm.GetDistance();
+      L_ArmP = V_Ballarm.GetDistance();
 
-      BallSw = BlSw.Get();
+      L_BallSw = V_BlSw.Get();
 
       /* Read Xbox controller commands here: */
-      DrvLY = -xboxDrive.GetRawAxis(1);
-      DrvRY = -xboxDrive.GetRawAxis(5);
+      L_XB_DrvLY = -V_XboxDrive.GetRawAxis(1);
+      L_XB_DrvRY = -V_XboxDrive.GetRawAxis(5);
 
-      XbxB1 = xboxDrive.GetRawButton(1);
-      XbxB2 = xboxDrive.GetRawButton(2);
-      XbxB4 = xboxDrive.GetRawButton(4);
-      XbxB5 = xboxDrive.GetRawButton(5);
+      L_XbxB1 = V_XboxDrive.GetRawButton(1);
+      L_XbxB2 = V_XboxDrive.GetRawButton(2);
+      L_XbxB4 = V_XboxDrive.GetRawButton(4);
+      L_XbxB5 = V_XboxDrive.GetRawButton(5);
 
-      XbxPOV = xboxDrive.GetPOV(0);
+      L_XbxPOV = V_XboxDrive.GetPOV(0);
 
       /* Read Logictec joystick commands here: */
-      LgtY = Logitech.GetRawAxis(1);
-      LgtZ = Logitech.GetRawAxis(2);
+      L_LgtY = V_Logitech.GetRawAxis(1);
+      L_LgtZ = V_Logitech.GetRawAxis(2);
 
-      LgtP1  = Logitech.GetPOV(0);
-      LgtT0  = Logitech.GetRawButton(1);
-      LgtB1  = Logitech.GetRawButton(2);
-      LgtB3  = Logitech.GetRawButton(3);
-      LgtB4  = Logitech.GetRawButton(4);
-      LgtB5  = Logitech.GetRawButton(5);
-      LgtB6  = Logitech.GetRawButton(6);
-      LgtB7  = Logitech.GetRawButton(7);
-      LgtB8  = Logitech.GetRawButton(8);
-      LgtB9  = Logitech.GetRawButton(9);
-      LgtB10 = Logitech.GetRawButton(10);
-      LgtB11 = Logitech.GetRawButton(11);
-      LgtB12 = Logitech.GetRawButton(12);
+      L_LgtP1  = V_Logitech.GetPOV(0);
+      L_LgtT0  = V_Logitech.GetRawButton(1);
+      L_LgtB1  = V_Logitech.GetRawButton(2);
+      L_LgtB3  = V_Logitech.GetRawButton(3);
+      L_LgtB4  = V_Logitech.GetRawButton(4);
+      L_LgtB5  = V_Logitech.GetRawButton(5);
+      L_LgtB6  = V_Logitech.GetRawButton(6);
+      L_LgtB7  = V_Logitech.GetRawButton(7);
+      L_LgtB8  = V_Logitech.GetRawButton(8);
+      L_LgtB9  = V_Logitech.GetRawButton(9);
+      L_LgtB10 = V_Logitech.GetRawButton(10);
+      L_LgtB11 = V_Logitech.GetRawButton(11);
+      L_LgtB12 = V_Logitech.GetRawButton(12);
 
-      LgtPOV = (double)LgtP1;
+      L_LgtPOV = (double)L_LgtP1;
 
      // DriverStation::
 	 //double GetMatchTime();
 	 // SmartDashboard::PutNumber("MatchTime", GetMatchTime());
 
 
-      if(LgtB12 && LgtB10)
+      if(L_LgtB12 && L_LgtB10)
         {
-        ballarm.Reset();
+        V_Ballarm.Reset();
         }
 
 
       /* Set the desired position of the ball arm. */
-      if (LgtB7)
+      if (L_LgtB7)
         {
         /* This is the middle position of the arm:  */
-         desiredPos = 120;
+         L_DesiredPos = 120;
         }
-      else if (LgtB8)
+      else if (L_LgtB8)
         {
         /* This is the upper position of the arm: */
-          desiredPos = 210;
+          L_DesiredPos = 210;
         }
-      else if((LgtB3) || (LgtB5) ||(LgtB6) || (LgtB9) || (LgtB11))
+      else if((L_LgtB3) || (L_LgtB5) ||(L_LgtB6) || (L_LgtB9) || (L_LgtB11))
         {
         /* Default */
-          desiredPos = 0;
+          L_DesiredPos = 0;
         }
 
       /* Set the ball roller state: */
-      if (LgtT0 == true &&
-          BallSw == true)
+      if (L_LgtT0 == true &&
+          L_BallSw == true)
         {
-          BallRollerSpd = 1;
+          L_BallRollerSpd = K_BallRollerIn;
         }
-      else if (LgtB1 == true)
+      else if (L_LgtB1 == true)
         {
-          BallRollerSpd = -1;
+          L_BallRollerSpd = K_BallRollerOut;
         }
       else
         {
-          BallRollerSpd = 0.0;
+          L_BallRollerSpd = K_BallRollerStop;
         }
 
 
       /* Set the output to the fish tape: */
-      if (LgtP1 == 180)
+      if (L_LgtP1 == 180)
         {
-          FishTapeSpd = -1.0;
+          L_FishTapeSpd = K_FishTapeUp;
         }
-      else if(LgtP1 == 0)
+      else if(L_LgtP1 == 0)
         {
-          FishTapeSpd = 1.0;
+          L_FishTapeSpd = K_FishTapeDown;
         }
       else
         {
-          FishTapeSpd = 0.0;
+          L_FishTapeSpd = K_FishTapeStop;
         }
 
       /* Set the output to the lower arm: */
-      LoArmCurve = LgtY*LowArmGx;
+      L_LoArmCurve = L_LgtY*K_LowArmGx;
 
 //      SmartDashboard::
 
 
-      /* Determine the wench state */
-      if (LgtB4 == true)
+      /* Determine the winch state */
+      if (L_LgtB4 == true)
         {
-        WenchSpd = 1;
+        K_WinchSpd = 1;
         }
-      else if (XbxB4)
+      else if (L_XbxB4)
       {
-    	  WenchSpd = -.5;
+    	  K_WinchSpd = -.5;
       }
       else
         {
-        WenchSpd = 0.0;
+        K_WinchSpd = 0.0;
         }
 
    /*   if(GetMatchTime() < 30)
       {
-    	  Light1.Set(0);
-    	  Light2.Set(0);
+    	  V_Light1.Set(0);
+    	  V_Light2.Set(0);
       }*/
 
       /* Output data to the smart dashboard: */
       ReadAutonSwitch();
 
-      UpdateSmartDashboad(Sw1.Get(),
-                          Sw2.Get(),
-                          Sw3.Get(),
-                          Sw4.Get(),
-                          BlSw.Get(),
-                          AutonState,
+      UpdateSmartDashboad(V_Sw1.Get(),
+                          V_Sw2.Get(),
+                          V_Sw3.Get(),
+                          V_Sw4.Get(),
+                          V_BlSw.Get(),
+                          V_AutonState,
                           0,
-                          ballarm.GetDistance(),
-                          gyroOne.GetAngle(),
-                          accel.GetX(),
-                          accel.GetY(),
-                          accel.GetZ(),
-                          (double)DrvLY,
-                          (double)DrvRY);
+                          V_Ballarm.GetDistance(),
+                          V_GyroOne.GetAngle(),
+                          V_Accel.GetX(),
+                          V_Accel.GetY(),
+                          V_Accel.GetZ(),
+                          (double)L_XB_DrvLY,
+                          (double)L_XB_DrvRY);
 
-      UpdateActuatorCmnds(BallRollerSpd,
-    		              desiredPos,
-                          LgtB3,
-                          LgtB5,
-                          LgtB6,
-                          LgtB7,
-                          LgtB8,
-                          LgtB9,
-                          LgtB11,
-                          DrvLY,
-                          DrvRY,
-                          FishTapeSpd,
-                          LoArmCurve,
-                          WenchSpd);
+      UpdateActuatorCmnds(L_BallRollerSpd,
+    		              L_DesiredPos,
+                          L_LgtB3,
+                          L_LgtB5,
+                          L_LgtB6,
+                          L_LgtB7,
+                          L_LgtB8,
+                          L_LgtB9,
+                          L_LgtB11,
+                          L_XB_DrvLY,
+                          L_XB_DrvRY,
+                          L_FishTapeSpd,
+                          L_LoArmCurve,
+                          K_WinchSpd);
 
       /* Force the program  to wait a period of time in order to conserve power: */
-      Wait(kUpdatePeriod); // Wait 5ms for the next update.
+      Wait(C_UpdatePeriod); // Wait 5ms for the next update.
 
       Scheduler::GetInstance()->Run();
       }
@@ -747,7 +752,7 @@ void UpdateSmartDashboad(bool   Switch1,
  ******************************************************************************/
   void TestPeriodic()
   {
-  lw->Run();
+  V_LW->Run();
   }
 };
 
